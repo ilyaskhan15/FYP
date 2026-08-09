@@ -56,14 +56,16 @@ export async function PUT(
 ) {
   try {
     const { id } = await params
-    const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
 
-    if (!userId) {
+    const body = await request.json()
+    // Accept userId from body (preferred) or query param (legacy)
+    const { searchParams } = new URL(request.url)
+    const userId = body.userId || searchParams.get('userId')
+
+    if (!userId || typeof userId !== 'string') {
       return NextResponse.json({ error: 'userId is required' }, { status: 400 })
     }
 
-    const body = await request.json()
     const {
       name,
       description,

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { useCartStore } from '@/stores/cart'
 import { useNavigationStore } from '@/stores/navigation'
 import { useAuthStore } from '@/stores/auth'
@@ -95,14 +95,14 @@ function getValidationErrors(form: Record<string, string>, step: number): FormEr
 }
 
 export default function CheckoutPage() {
-  const { items, subtotal, shipping, tax, clearCart } = useCartStore()
+  const { items, subtotal, shipping, tax, clearCart, appliedCoupon } = useCartStore()
   const { navigate } = useNavigationStore()
   const { user } = useAuthStore()
   const [step, setStep] = useState(0)
   const [loading, setLoading] = useState(false)
   const [touched, setTouched] = useState<Record<string, boolean>>({})
-  const [couponCode, setCouponCode] = useState<string | null>(null)
-  const [couponDiscount, setCouponDiscount] = useState(0)
+  const couponCode = appliedCoupon?.code ?? null
+  const couponDiscount = appliedCoupon?.discount ?? 0
 
   const [form, setForm] = useState({
     firstName: user?.name?.split(' ')[0] || '',
@@ -126,18 +126,6 @@ export default function CheckoutPage() {
   const subtotalValue = subtotal()
   const taxValue = tax()
   const orderTotal = subtotalValue + shippingCost + taxValue - couponDiscount
-
-  // Restore coupon from localStorage
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem('nova-cart-coupon')
-      if (stored) {
-        const parsed = JSON.parse(stored) as { code: string; discount: number }
-        setCouponCode(parsed.code)
-        setCouponDiscount(parsed.discount)
-      }
-    } catch { /* ignore */ }
-  }, [])
 
   const errors = useMemo(() => getValidationErrors(form, step), [form, step])
   const hasErrors = Object.keys(errors).length > 0
@@ -219,7 +207,6 @@ export default function CheckoutPage() {
         duration: 4000,
       })
       clearCart()
-      localStorage.removeItem('nova-cart-coupon')
       navigate('order-confirmation')
     } catch (error) {
       console.error('Order failed:', error)

@@ -14,9 +14,15 @@ export interface CartItem {
   stock: number
 }
 
+export interface AppliedCoupon {
+  code: string
+  discount: number
+}
+
 interface CartState {
   items: CartItem[]
   isOpen: boolean
+  appliedCoupon: AppliedCoupon | null
   addItem: (item: Omit<CartItem, 'id'>) => void
   removeItem: (id: string) => void
   updateQuantity: (id: string, quantity: number) => void
@@ -24,10 +30,13 @@ interface CartState {
   toggleCart: () => void
   openCart: () => void
   closeCart: () => void
+  applyCoupon: (code: string, discount: number) => void
+  removeCoupon: () => void
   itemCount: () => number
   subtotal: () => number
   shipping: () => number
   tax: () => number
+  discount: () => number
   total: () => number
 }
 
@@ -36,6 +45,7 @@ export const useCartStore = create<CartState>()(
     (set, get) => ({
       items: [],
       isOpen: false,
+      appliedCoupon: null,
 
       addItem: (item) => set((state) => {
         const existingIndex = state.items.findIndex(
@@ -63,24 +73,28 @@ export const useCartStore = create<CartState>()(
         ),
       })),
 
-      clearCart: () => set({ items: [] }),
+      clearCart: () => set({ items: [], appliedCoupon: null }),
 
       toggleCart: () => set((state) => ({ isOpen: !state.isOpen })),
       openCart: () => set({ isOpen: true }),
       closeCart: () => set({ isOpen: false }),
 
+      applyCoupon: (code, discount) => set({ appliedCoupon: { code, discount } }),
+      removeCoupon: () => set({ appliedCoupon: null }),
+
       itemCount: () => get().items.reduce((sum, i) => sum + i.quantity, 0),
       subtotal: () => get().items.reduce((sum, i) => sum + i.price * i.quantity, 0),
       shipping: () => get().subtotal() > 75 ? 0 : 9.99,
       tax: () => get().subtotal() * 0.08,
+      discount: () => get().appliedCoupon?.discount ?? 0,
       total: () => {
         const s = get()
-        return s.subtotal() + s.shipping() + s.tax()
+        return Math.max(0, s.subtotal() + s.shipping() + s.tax() - s.discount())
       },
     }),
     {
       name: 'ecommerce-cart',
-      partialize: (state) => ({ items: state.items }),
+      partialize: (state) => ({ items: state.items, appliedCoupon: state.appliedCoupon }),
     }
   )
 )

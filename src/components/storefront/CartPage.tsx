@@ -11,12 +11,12 @@ import { toast } from 'sonner'
 import { useState, useCallback } from 'react'
 
 export default function CartPage() {
-  const { items, updateQuantity, removeItem, addItem, clearCart, subtotal, shipping, tax, total } = useCartStore()
+  const { items, updateQuantity, removeItem, addItem, clearCart, subtotal, shipping, tax, appliedCoupon, applyCoupon, removeCoupon, discount, total } = useCartStore()
   const { navigate } = useNavigationStore()
   const [couponCode, setCouponCode] = useState('')
-  const [couponApplied, setCouponApplied] = useState(false)
   const [couponError, setCouponError] = useState('')
-  const [couponDiscount, setCouponDiscount] = useState(0)
+  const couponDiscount = discount()
+  const couponApplied = !!appliedCoupon
 
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return
@@ -25,16 +25,17 @@ export default function CartPage() {
       const data = await res.json()
       if (data.error) {
         setCouponError(data.error)
-        setCouponApplied(false)
+        removeCoupon()
         toast.error(data.error)
         return
       }
       setCouponError('')
-      setCouponApplied(true)
-      if (data.type === 'fixed') setCouponDiscount(data.value)
-      else if (data.type === 'percentage') setCouponDiscount(subtotal() * (data.value / 100))
-      else if (data.type === 'free_shipping') setCouponDiscount(shipping())
-      toast.success(`Coupon applied! You save $${couponDiscount.toFixed(2)}`)
+      let calcDiscount = 0
+      if (data.type === 'fixed') calcDiscount = data.value
+      else if (data.type === 'percentage') calcDiscount = subtotal() * (data.value / 100)
+      else if (data.type === 'free_shipping') calcDiscount = shipping()
+      applyCoupon(couponCode.toUpperCase(), calcDiscount)
+      toast.success(`Coupon applied! You save $${calcDiscount.toFixed(2)}`)
     } catch {
       setCouponError('Invalid coupon')
       toast.error('Invalid coupon code')
@@ -75,8 +76,6 @@ export default function CartPage() {
       duration: 6000,
     })
   }, [clearCart, items, addItem])
-
-  const finalTotal = total() - couponDiscount
 
   if (items.length === 0) {
     return (
@@ -202,7 +201,7 @@ export default function CartPage() {
                 </div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Tax (8%)</span><span>${tax().toFixed(2)}</span></div>
                 {couponApplied && couponDiscount > 0 && (
-                  <div className="flex justify-between text-green-600"><span>Discount</span><span>-${couponDiscount.toFixed(2)}</span></div>
+                  <div className="flex justify-between text-green-600"><span>Discount ({appliedCoupon!.code})</span><span>-${couponDiscount.toFixed(2)}</span></div>
                 )}
               </div>
 
@@ -210,7 +209,7 @@ export default function CartPage() {
 
               <div className="flex justify-between text-lg font-bold">
                 <span>Total</span>
-                <span>${Math.max(0, finalTotal).toFixed(2)}</span>
+                <span>${total().toFixed(2)}</span>
               </div>
 
               {shipping() > 0 && (
@@ -220,7 +219,9 @@ export default function CartPage() {
                 </div>
               )}
 
-              <Button className="w-full h-11 bg-foreground text-background hover:bg-foreground/90 font-semibold" onClick={() => navigate('checkout')}>
+              <Button className="w-full h-11 bg-foreground text-background hover:bg-foreground/90 font-semibold" onClick={() => {
+                navigate('checkout')
+              }}>
                 Proceed to Checkout <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </CardContent>

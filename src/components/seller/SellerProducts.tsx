@@ -337,10 +337,10 @@ function SellerProductFormDialog({ open, onOpenChange, editProduct, userId }: Se
   // Create mutation
   const createMutation = useMutation({
     mutationFn: (payload: Record<string, unknown>) =>
-      fetch(`/api/seller/products?userId=${userId}`, {
+      fetch(`/api/seller/products`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ ...payload, userId }),
       }).then(r => {
         if (!r.ok) return r.json().then(e => { throw new Error(e.error || 'Failed to create product') })
         return r.json()
@@ -353,15 +353,20 @@ function SellerProductFormDialog({ open, onOpenChange, editProduct, userId }: Se
     onError: (error: Error) => {
       toast.error(error.message)
     },
+    onMutate: () => {
+      if (!userId) {
+        throw new Error('You must be logged in to create a product')
+      }
+    },
   })
 
   // Update mutation
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) =>
-      fetch(`/api/seller/products/${id}?userId=${userId}`, {
+      fetch(`/api/seller/products/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, userId }),
       }).then(r => {
         if (!r.ok) return r.json().then(e => { throw new Error(e.error || 'Failed to update product') })
         return r.json()

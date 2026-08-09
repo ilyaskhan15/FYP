@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     const { userId, name, description, price, stock, categoryId, brand, tags, images } =
       body
 
-    if (!userId) {
+    if (!userId || typeof userId !== 'string') {
       return NextResponse.json({ error: 'userId is required' }, { status: 400 })
     }
 
