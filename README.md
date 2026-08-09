@@ -10,7 +10,7 @@
 [![Prisma](https://img.shields.io/badge/Prisma-6-2d3748?logo=prisma)](https://www.prisma.io/)
 [![shadcn/ui](https://img.shields.io/badge/shadcn%2Fui-latest-18181b?logo=shadcnui)](https://ui.shadcn.com/)
 
-[Features](#-features) • [Demo Accounts](#-demo-accounts) • [Getting Started](#-getting-started) • [Tech Stack](#-tech-stack) • [Project Structure](#-project-structure) • [Architecture](#-architecture) • [Screenshots](#-screenshots) • [License](#-license)
+[Features](#-features) • [Demo Accounts](#-demo-accounts) • [Getting Started](#-getting-started) • [Tech Stack](#-tech-stack) • [Project Structure](#-project-structure) • [Architecture](#-architecture)
 
 </div>
 
