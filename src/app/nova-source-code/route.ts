@@ -22,6 +22,7 @@ const INCLUDE_ENTRIES = [
 
 // Top-level files to include
 const INCLUDE_FILES = [
+  'README.md',
   'package.json',
   'bun.lock',
   'tsconfig.json',

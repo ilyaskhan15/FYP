@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({ profile })
+    return NextResponse.json(profile)
   } catch (error) {
     console.error('Seller profile GET error:', error)
     return NextResponse.json(
@@ -86,7 +86,7 @@ export async function PUT(request: NextRequest) {
         },
       })
 
-      return NextResponse.json({ profile })
+      return NextResponse.json(profile)
     }
 
     // Store name unchanged — update remaining fields
@@ -100,7 +100,7 @@ export async function PUT(request: NextRequest) {
       },
     })
 
-    return NextResponse.json({ profile })
+    return NextResponse.json(profile)
   } catch (error) {
     console.error('Seller profile PUT error:', error)
     return NextResponse.json(

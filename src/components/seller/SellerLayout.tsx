@@ -2,6 +2,7 @@
 
 import { useNavigationStore, type ViewType } from '@/stores/navigation'
 import { useAuthStore } from '@/stores/auth'
+import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
@@ -21,6 +22,18 @@ interface Props { children: React.ReactNode }
 export default function SellerLayout({ children }: Props) {
   const { currentView, navigate } = useNavigationStore()
   const { user, setUser, isSeller } = useAuthStore()
+
+  // Fetch full seller profile for banner/logo display
+  const { data: profile } = useQuery({
+    queryKey: ['seller-profile', user?.id],
+    queryFn: async () => {
+      if (!user) return null
+      const res = await fetch(`/api/seller/profile?userId=${user.id}`)
+      if (!res.ok) return null
+      return res.json()
+    },
+    enabled: !!user && isSeller() && !!user.sellerProfile?.isApproved,
+  })
 
   // Not logged in or not a seller
   if (!user || !isSeller()) {
@@ -86,7 +99,7 @@ export default function SellerLayout({ children }: Props) {
     <div className="min-h-[calc(100vh-8rem)]">
       <div className="container mx-auto px-4 py-8">
         {/* Back link + Title */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate('home')}
@@ -112,6 +125,67 @@ export default function SellerLayout({ children }: Props) {
             </div>
             <span className="font-medium">{user.name || user.email}</span>
           </div>
+        </div>
+
+        {/* Store Banner */}
+        <div className="mb-8 rounded-xl overflow-hidden border bg-card">
+          {profile?.banner ? (
+            <div className="relative h-32 sm:h-40 w-full overflow-hidden">
+              <img
+                src={profile.banner}
+                alt="Store banner"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+              {profile.logo && (
+                <div className="absolute bottom-0 left-4 translate-y-1/2">
+                  <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl border-2 border-white bg-white shadow-lg overflow-hidden">
+                    <img src={profile.logo} alt="Store logo" className="w-full h-full object-cover" />
+                  </div>
+                </div>
+              )}
+              <div className={`absolute bottom-3 sm:bottom-4 text-white ${profile.logo ? 'left-24 sm:left-28' : 'left-4'}`}>
+                <h2 className="font-bold text-lg sm:text-xl drop-shadow-lg">{profile.storeName}</h2>
+                {profile.description && (
+                  <p className="text-white/80 text-xs sm:text-sm mt-0.5 drop-shadow-md line-clamp-1">{profile.description}</p>
+                )}
+              </div>
+            </div>
+          ) : profile?.logo ? (
+            <div className="flex items-center gap-4 p-4">
+              <div className="h-14 w-14 rounded-xl border bg-muted overflow-hidden shrink-0">
+                <img src={profile.logo} alt="Store logo" className="w-full h-full object-cover" />
+              </div>
+              <div className="min-w-0">
+                <h2 className="font-bold text-lg truncate">{profile.storeName}</h2>
+                {profile.description && (
+                  <p className="text-sm text-muted-foreground truncate">{profile.description}</p>
+                )}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="ml-auto shrink-0"
+                onClick={() => navigate('seller-settings')}
+              >
+                Add Banner
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between p-4">
+              <div>
+                <h2 className="font-bold text-lg">{user.sellerProfile?.storeName || 'My Store'}</h2>
+                <p className="text-sm text-muted-foreground">Customize your store with a logo and banner</p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('seller-settings')}
+              >
+                Customize
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className="grid lg:grid-cols-5 gap-8">

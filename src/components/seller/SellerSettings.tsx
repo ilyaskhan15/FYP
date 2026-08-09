@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge'
 import { Loader2, Store, Save, CheckCircle, Clock } from 'lucide-react'
 
 export default function SellerSettings() {
-  const { user } = useAuthStore()
+  const { user, setUser } = useAuthStore()
   const queryClient = useQueryClient()
 
   const [storeName, setStoreName] = useState('')
@@ -38,9 +38,9 @@ export default function SellerSettings() {
     enabled: !!user,
   })
 
-  // Populate form fields from profile data once
+  // Populate form fields from profile data
   useEffect(() => {
-    if (profile && !initialized) {
+    if (profile) {
       setStoreName(profile.storeName || '')
       setDescription(profile.description || '')
       setLogo(profile.logo || '')
@@ -53,7 +53,7 @@ export default function SellerSettings() {
       } catch { /* ignore */ }
       setInitialized(true)
     }
-  }, [profile, initialized])
+  }, [profile])
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -62,6 +62,7 @@ export default function SellerSettings() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          userId: user.id,
           storeName,
           description,
           logo: logo || null,
@@ -72,9 +73,21 @@ export default function SellerSettings() {
       if (!res.ok) throw new Error('Failed to update profile')
       return res.json()
     },
-    onSuccess: () => {
+    onSuccess: (updatedProfile) => {
       toast.success('Store settings saved')
       queryClient.invalidateQueries({ queryKey: ['seller-profile'] })
+      // Update auth store so SellerLayout reflects new store name immediately
+      if (user && updatedProfile) {
+        setUser({
+          ...user,
+          sellerProfile: {
+            id: user.sellerProfile?.id || updatedProfile.id,
+            storeName: updatedProfile.storeName,
+            storeSlug: updatedProfile.storeSlug,
+            isApproved: updatedProfile.isApproved,
+          },
+        })
+      }
     },
     onError: () => {
       toast.error('Failed to save settings')
