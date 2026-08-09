@@ -127,30 +127,41 @@ export default function SellerLayout({ children }: Props) {
           </div>
         </div>
 
-        {/* Store Banner */}
-        <div className="mb-8 rounded-xl overflow-hidden border bg-card">
+        {/* Store Banner — YouTube-style layout */}
+        <div className="mb-8 rounded-xl border bg-card">
           {profile?.banner ? (
-            <div className="relative h-32 sm:h-40 w-full overflow-hidden">
-              <img
-                src={profile.banner}
-                alt="Store banner"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-              {profile.logo && (
-                <div className="absolute bottom-0 left-4 translate-y-1/2">
-                  <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl border-2 border-white bg-white shadow-lg overflow-hidden">
-                    <img src={profile.logo} alt="Store logo" className="w-full h-full object-cover" />
-                  </div>
-                </div>
-              )}
-              <div className={`absolute bottom-3 sm:bottom-4 text-white ${profile.logo ? 'left-24 sm:left-28' : 'left-4'}`}>
-                <h2 className="font-bold text-lg sm:text-xl drop-shadow-lg">{profile.storeName}</h2>
-                {profile.description && (
-                  <p className="text-white/80 text-xs sm:text-sm mt-0.5 drop-shadow-md line-clamp-1">{profile.description}</p>
-                )}
+            <>
+              {/* Banner image — rounded top, clipped */}
+              <div className="rounded-t-xl h-36 sm:h-48 w-full overflow-hidden">
+                <img
+                  src={profile.banner}
+                  alt="Store banner"
+                  className="w-full h-full object-cover"
+                />
               </div>
-            </div>
+              {/* Info row below banner — logo overlaps bottom edge */}
+              <div className="relative px-4 sm:px-6 pt-2 pb-4 flex items-end gap-4">
+                {profile.logo ? (
+                  <div className="-mt-10 sm:-mt-12 shrink-0">
+                    <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl border-2 border-card bg-card shadow-md overflow-hidden">
+                      <img src={profile.logo} alt="Store logo" className="w-full h-full object-cover" />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="-mt-10 sm:-mt-12 shrink-0">
+                    <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl border-2 border-card bg-muted flex items-center justify-center shadow-md">
+                      <Store className="h-7 w-7 sm:h-9 sm:w-9 text-muted-foreground" />
+                    </div>
+                  </div>
+                )}
+                <div className="min-w-0 pb-0.5">
+                  <h2 className="font-bold text-lg sm:text-xl truncate">{profile.storeName}</h2>
+                  {profile.description && (
+                    <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">{profile.description}</p>
+                  )}
+                </div>
+              </div>
+            </>
           ) : profile?.logo ? (
             <div className="flex items-center gap-4 p-4">
               <div className="h-14 w-14 rounded-xl border bg-muted overflow-hidden shrink-0">
