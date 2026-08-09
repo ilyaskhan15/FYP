@@ -550,4 +550,4 @@ button:not(:disabled) {
     animation: none !important;
     transition: none !important;
   }
-}
+}.hero-dot-grid { background-image: radial-gradient(rgba(255,255,255,0.8) 1px, transparent 1px); background-size: 40px 40px; } .hero-dot-grid-sm { background-image: radial-gradient(rgba(255,255,255,0.5) 1px, transparent 1px); background-size: 32px 32px; }
