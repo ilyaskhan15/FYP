@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Heart, ShoppingCart, Star, Eye, GitCompareArrows, Zap } from 'lucide-react'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
@@ -84,15 +84,32 @@ export default function ProductCard({ product, onQuickView }: ProductCardProps) 
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
   const isLoggedIn = !!user
+
+  // User-specific localStorage key so different users don't share wishlist heart state
+  const wishlistKey = `wishlist-${user?.id || 'guest'}`
+
+  // Track previous wishlist key to detect user changes and reset state during render
+  // (React-recommended pattern instead of useEffect + setState)
+  const [prevWishlistKey, setPrevWishlistKey] = useState(wishlistKey)
   const [isWishlisted, setIsWishlisted] = useState(() => {
     if (typeof window === 'undefined') return false
     try {
-      const wishlist: string[] = JSON.parse(localStorage.getItem('wishlist') || '[]')
+      const wishlist: string[] = JSON.parse(localStorage.getItem(wishlistKey) || '[]')
       return wishlist.includes(product.id)
     } catch {
       return false
     }
   })
+
+  if (prevWishlistKey !== wishlistKey) {
+    setPrevWishlistKey(wishlistKey)
+    try {
+      const wishlist: string[] = JSON.parse(localStorage.getItem(wishlistKey) || '[]')
+      setIsWishlisted(wishlist.includes(product.id))
+    } catch {
+      setIsWishlisted(false)
+    }
+  }
 
   const [addedToCart, setAddedToCart] = useState(false)
   const inComparison = isInComparison(product.id)
@@ -125,15 +142,15 @@ export default function ProductCard({ product, onQuickView }: ProductCardProps) 
     const next = !isWishlisted
     setIsWishlisted(next)
 
-    // Always update localStorage for immediate UI consistency
-    const wishlist: string[] = JSON.parse(localStorage.getItem('wishlist') || '[]')
+    // Always update localStorage for immediate UI consistency (user-specific key)
+    const wishlist: string[] = JSON.parse(localStorage.getItem(wishlistKey) || '[]')
     if (next) {
       wishlist.push(product.id)
     } else {
       const idx = wishlist.indexOf(product.id)
       if (idx > -1) wishlist.splice(idx, 1)
     }
-    localStorage.setItem('wishlist', JSON.stringify(wishlist))
+    localStorage.setItem(wishlistKey, JSON.stringify(wishlist))
 
     // If logged in, also sync to DB
     if (isLoggedIn && user) {
@@ -161,7 +178,7 @@ export default function ProductCard({ product, onQuickView }: ProductCardProps) 
     toast.success(next ? 'Added to wishlist' : 'Removed from wishlist')
     queryClient.invalidateQueries({ queryKey: ['wishlist-db'] })
     queryClient.invalidateQueries({ queryKey: ['wishlist-local'] })
-  }, [isWishlisted, isLoggedIn, user, product.id, queryClient])
+  }, [isWishlisted, isLoggedIn, user, product.id, queryClient, wishlistKey])
 
   const handleCompare = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
@@ -201,7 +218,7 @@ export default function ProductCard({ product, onQuickView }: ProductCardProps) 
             </Badge>
           )}
           {product.stock === 0 && (
-            <Badge className="bg-zinc-500 text-white text-[10px] px-2 py-0.5 hover:bg-muted0 rounded-md font-semibold">SOLD OUT</Badge>
+            <Badge className="bg-zinc-500 text-white text-[10px] px-2 py-0.5 hover:bg-zinc-600 rounded-md font-semibold">SOLD OUT</Badge>
           )}
         </div>
 

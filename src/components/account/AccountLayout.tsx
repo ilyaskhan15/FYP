@@ -4,8 +4,8 @@ import { useNavigationStore } from '@/stores/navigation'
 import { useAuthStore } from '@/stores/auth'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { User, Package, MapPin, Heart, Star, ArrowLeft, LogOut } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { Badge } from '@/components/ui/badge'
+import { User, Package, MapPin, Heart, Star, ArrowLeft, LogOut, Store, Crown } from 'lucide-react'
 
 type AccountView = 'account' | 'account-orders' | 'account-addresses' | 'account-wishlist' | 'account-reviews'
 
@@ -34,12 +34,18 @@ export default function AccountLayout({ children }: Props) {
     )
   }
 
+  const isSeller = user.role === 'seller'
+  const isAdmin = user.role === 'admin'
+
   return (
     <div className="container mx-auto px-4 py-8">
       <button onClick={() => navigate('home')} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6">
         <ArrowLeft className="h-4 w-4" /> Home
       </button>
-      <h1 className="text-2xl font-bold mb-6">My Account</h1>
+      <div className="flex items-center gap-3 mb-6">
+        <h1 className="text-2xl font-bold">My Account</h1>
+        <Badge variant="secondary" className="text-xs capitalize">{user.role}</Badge>
+      </div>
 
       <div className="grid md:grid-cols-4 gap-8">
         <aside className="md:col-span-1">
@@ -64,6 +70,34 @@ export default function AccountLayout({ children }: Props) {
                 <item.icon className="h-4 w-4" />{item.label}
               </button>
             ))}
+
+            {/* Seller section */}
+            {isSeller && (
+              <>
+                <Separator className="my-2" />
+                <p className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Seller</p>
+                <button
+                  onClick={() => navigate('seller')}
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted transition-colors"
+                >
+                  <Store className="h-4 w-4" />Seller Dashboard
+                </button>
+              </>
+            )}
+
+            {/* Become a Seller (for buyers only) */}
+            {!isSeller && !isAdmin && (
+              <>
+                <Separator className="my-2" />
+                <button
+                  onClick={() => window.dispatchEvent(new Event('open-become-seller'))}
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors"
+                >
+                  <Crown className="h-4 w-4" />Become a Seller
+                </button>
+              </>
+            )}
+
             <Separator className="my-2" />
             <button onClick={() => setUser(null)} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950 transition-colors">
               <LogOut className="h-4 w-4" />Sign Out

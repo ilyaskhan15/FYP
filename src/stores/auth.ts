@@ -7,6 +7,12 @@ export interface AuthUser {
   name: string | null
   image?: string | null
   role: string
+  sellerProfile?: {
+    id: string
+    storeName: string
+    storeSlug: string
+    isApproved: boolean
+  } | null
 }
 
 interface AuthState {
@@ -15,6 +21,7 @@ interface AuthState {
   setUser: (user: AuthUser | null) => void
   setLoading: (loading: boolean) => void
   isAdmin: () => boolean
+  isSeller: () => boolean
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -25,6 +32,10 @@ export const useAuthStore = create<AuthState>()(
       setUser: (user) => set({ user }),
       setLoading: (loading) => set({ isLoading: loading }),
       isAdmin: () => get().user?.role === 'admin',
+      isSeller: () => {
+        const u = get().user
+        return u?.role === 'seller' && !!u?.sellerProfile
+      },
     }),
     {
       name: 'ecommerce-auth',

@@ -1,6 +1,16 @@
 import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
 
+function safeParseImages(imagesStr: string | null | undefined): string[] {
+  if (!imagesStr) return []
+  try {
+    const parsed = JSON.parse(imagesStr)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
 // GET /api/wishlist — Return user's wishlist items with product details
 export async function GET(request: NextRequest) {
   try {
@@ -31,25 +41,27 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     })
 
-    const items = wishlistItems.map((item) => {
-      const images: string[] = JSON.parse(item.product.images)
-      return {
-        id: item.id,
-        productId: item.productId,
-        addedAt: item.createdAt,
-        product: {
-          id: item.product.id,
-          name: item.product.name,
-          slug: item.product.slug,
-          price: item.product.price,
-          compareAtPrice: item.product.compareAtPrice,
-          rating: item.product.rating,
-          reviewCount: item.product.reviewCount,
-          stock: item.product.stock,
-          image: images.length > 0 ? images[0] : null,
-        },
-      }
-    })
+    const items = wishlistItems
+      .filter((item) => item.product !== null)
+      .map((item) => {
+        const images = safeParseImages(item.product.images)
+        return {
+          id: item.id,
+          productId: item.productId,
+          addedAt: item.createdAt,
+          product: {
+            id: item.product.id,
+            name: item.product.name,
+            slug: item.product.slug,
+            price: item.product.price,
+            compareAtPrice: item.product.compareAtPrice,
+            rating: item.product.rating,
+            reviewCount: item.product.reviewCount,
+            stock: item.product.stock,
+            image: images.length > 0 ? images[0] : null,
+          },
+        }
+      })
 
     return NextResponse.json(items)
   } catch (error) {

@@ -29,6 +29,12 @@ import AdminReviews from '@/components/admin/AdminReviews'
 import AdminOrders from '@/components/admin/AdminOrders'
 import AdminCoupons from '@/components/admin/AdminCoupons'
 import AdminUsers from '@/components/admin/AdminUsers'
+import AdminSellerApprovals from '@/components/admin/AdminSellerApprovals'
+import SellerLayout from '@/components/seller/SellerLayout'
+import SellerDashboard from '@/components/seller/SellerDashboard'
+import SellerProducts from '@/components/seller/SellerProducts'
+import SellerOrders from '@/components/seller/SellerOrders'
+import SellerSettings from '@/components/seller/SellerSettings'
 import { ArrowUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -88,6 +94,12 @@ function AppContent() {
       case 'admin-orders': return <AdminLayout><AdminOrders /></AdminLayout>
       case 'admin-coupons': return <AdminLayout><AdminCoupons /></AdminLayout>
       case 'admin-users': return <AdminLayout><AdminUsers /></AdminLayout>
+      case 'admin-seller-approvals': return <AdminLayout><AdminSellerApprovals /></AdminLayout>
+      // Seller views
+      case 'seller': return <SellerLayout><SellerDashboard /></SellerLayout>
+      case 'seller-products': return <SellerLayout><SellerProducts /></SellerLayout>
+      case 'seller-orders': return <SellerLayout><SellerOrders /></SellerLayout>
+      case 'seller-settings': return <SellerLayout><SellerSettings /></SellerLayout>
       default: return <HomePage />
     }
   }

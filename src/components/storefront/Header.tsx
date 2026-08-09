@@ -17,9 +17,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Label } from '@/components/ui/label'
 import { useTheme } from 'next-themes'
 import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
 import {
   Search, ShoppingCart, User, Menu, Heart, Package, LayoutDashboard, LogOut,
-  ChevronDown, ChevronRight, Store, Sun, Moon, Sparkles, TrendingUp, Tag, ArrowRight, Loader2, Clock, X,
+  ChevronDown, ChevronRight, Store, Sun, Moon, Sparkles, TrendingUp, Tag, ArrowRight, Loader2, Clock, X, Crown,
 } from 'lucide-react'
 
 /* ------------------------------------------------------------------ */
@@ -54,7 +55,7 @@ interface SearchProduct {
 export default function Header() {
   const { navigate, currentView, setSearchQuery, searchQuery } = useNavigationStore()
   const { itemCount, openCart } = useCartStore()
-  const { user, setUser, isAdmin } = useAuthStore()
+  const { user, setUser, isAdmin, isSeller } = useAuthStore()
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   useEffect(() => { setMounted(true) }, [])
@@ -68,6 +69,14 @@ export default function Header() {
   const [authName, setAuthName] = useState('')
   const [authError, setAuthError] = useState('')
   const [authLoading, setAuthLoading] = useState(false)
+  const [authRole, setAuthRole] = useState<'customer' | 'seller'>('customer')
+
+  /* ---------- become seller state ---------- */
+  const [sellerDialogOpen, setSellerDialogOpen] = useState(false)
+  const [sellerStoreName, setSellerStoreName] = useState('')
+  const [sellerDescription, setSellerDescription] = useState('')
+  const [sellerLoading, setSellerLoading] = useState(false)
+  const [sellerError, setSellerError] = useState('')
 
   /* ---------- mega menu state ---------- */
   const [megaMenuOpen, setMegaMenuOpen] = useState(false)
@@ -272,7 +281,7 @@ export default function Header() {
       const res = await fetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: authMode, email: authEmail, password: authPassword, name: authName }),
+        body: JSON.stringify({ action: authMode, email: authEmail, password: authPassword, name: authName, role: authMode === 'register' ? authRole : undefined }),
       })
       const data = await res.json()
       if (data.error) { setAuthError(data.error); return }
@@ -284,6 +293,33 @@ export default function Header() {
   }
 
   const handleSignOut = () => { setUser(null) }
+
+  const handleBecomeSeller = async () => {
+    if (!user || !sellerStoreName.trim()) return
+    setSellerLoading(true)
+    setSellerError('')
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'create-seller-profile', userId: user.id, storeName: sellerStoreName.trim(), description: sellerDescription.trim() || undefined }),
+      })
+      const data = await res.json()
+      if (data.error) { setSellerError(data.error); return }
+      setUser(data.user)
+      setSellerDialogOpen(false)
+      setSellerStoreName('')
+      setSellerDescription('')
+    } catch { setSellerError('Something went wrong') }
+    finally { setSellerLoading(false) }
+  }
+
+  /* ---------- Listen for become-seller event ---------- */
+  useEffect(() => {
+    const handler = () => setSellerDialogOpen(true)
+    window.addEventListener('open-become-seller', handler)
+    return () => window.removeEventListener('open-become-seller', handler)
+  }, [])
 
   /* ================================================================ */
   /*  Render                                                            */
@@ -379,6 +415,9 @@ export default function Header() {
                     <div className="my-3 border-t" />
                     <button onClick={() => { navigate('account-orders'); setMobileOpen(false) }} className="w-full text-left px-3 py-2.5 rounded-md text-sm text-muted-foreground hover:bg-muted">My Orders</button>
                     <button onClick={() => { navigate('account-wishlist'); setMobileOpen(false) }} className="w-full text-left px-3 py-2.5 rounded-md text-sm text-muted-foreground hover:bg-muted">Wishlist</button>
+                    {isSeller() && (
+                      <button onClick={() => { navigate('seller'); setMobileOpen(false) }} className="w-full text-left px-3 py-2.5 rounded-md text-sm text-muted-foreground hover:bg-muted font-medium">Seller Center</button>
+                    )}
                     {isAdmin() && (
                       <button onClick={() => { navigate('admin'); setMobileOpen(false) }} className="w-full text-left px-3 py-2.5 rounded-md text-sm text-muted-foreground hover:bg-muted font-medium">Admin Dashboard</button>
                     )}
@@ -693,6 +732,11 @@ export default function Header() {
                   <DropdownMenuItem onClick={() => navigate('account-wishlist')}>
                     <Heart className="mr-2 h-4 w-4" />Wishlist
                   </DropdownMenuItem>
+                  {isSeller() && (
+                    <DropdownMenuItem onClick={() => navigate('seller')}>
+                      <Store className="mr-2 h-4 w-4" />Seller Center
+                    </DropdownMenuItem>
+                  )}
                   {isAdmin() && (
                     <>
                       <DropdownMenuSeparator />
@@ -737,6 +781,35 @@ export default function Header() {
           <div className="space-y-4 pt-2">
             {authMode === 'register' && (
               <div className="space-y-2">
+                <Label>Account Type</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setAuthRole('customer')}
+                    className={cn(
+                      'flex flex-col items-center gap-1.5 p-3 rounded-lg border-2 transition-colors text-sm',
+                      authRole === 'customer' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
+                    )}
+                  >
+                    <User className={cn('h-5 w-5', authRole === 'customer' ? 'text-primary' : 'text-muted-foreground')} />
+                    <span className={cn('font-medium', authRole === 'customer' ? 'text-primary' : 'text-muted-foreground')}>Buyer</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAuthRole('seller')}
+                    className={cn(
+                      'flex flex-col items-center gap-1.5 p-3 rounded-lg border-2 transition-colors text-sm',
+                      authRole === 'seller' ? 'border-amber-500 bg-amber-500/5' : 'border-border hover:border-amber-500/50'
+                    )}
+                  >
+                    <Store className={cn('h-5 w-5', authRole === 'seller' ? 'text-amber-500' : 'text-muted-foreground')} />
+                    <span className={cn('font-medium', authRole === 'seller' ? 'text-amber-500' : 'text-muted-foreground')}>Seller</span>
+                  </button>
+                </div>
+              </div>
+            )}
+            {authMode === 'register' && (
+              <div className="space-y-2">
                 <Label htmlFor="auth-name">Name</Label>
                 <Input id="auth-name" placeholder="Your name" value={authName} onChange={(e) => setAuthName(e.target.value)} />
               </div>
@@ -761,8 +834,38 @@ export default function Header() {
             </p>
             <div className="text-center text-xs text-muted-foreground border-t pt-3 mt-3">
               Demo: <strong>admin@store.com</strong> / <strong>admin123</strong> (Admin)<br />
-              <strong>demo@store.com</strong> / <strong>demo123</strong> (Customer)
+              <strong>demo@store.com</strong> / <strong>demo123</strong> (Customer)<br />
+              <strong>seller@store.com</strong> / <strong>seller123</strong> (Seller)
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Become a Seller Dialog */}
+      <Dialog open={sellerDialogOpen} onOpenChange={(open) => { setSellerDialogOpen(open); setSellerError('') }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Crown className="h-5 w-5 text-amber-500" />Become a Seller</DialogTitle>
+            <DialogDescription>
+              Start selling your products on NOVA STORE. Set up your store profile below.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label htmlFor="store-name">Store Name *</Label>
+              <Input id="store-name" placeholder="e.g., TechGear Pro" value={sellerStoreName} onChange={(e) => setSellerStoreName(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="store-desc">Store Description</Label>
+              <Input id="store-desc" placeholder="Brief description of your store..." value={sellerDescription} onChange={(e) => setSellerDescription(e.target.value)} />
+            </div>
+            {sellerError && <p className="text-sm text-red-500">{sellerError}</p>}
+            <Button className="w-full" onClick={handleBecomeSeller} disabled={sellerLoading || !sellerStoreName.trim()}>
+              {sellerLoading ? 'Creating...' : 'Create Seller Account'}
+            </Button>
+            <p className="text-center text-xs text-muted-foreground">
+              Your account will be reviewed by an admin before you can start selling.
+            </p>
           </div>
         </DialogContent>
       </Dialog>

@@ -2,11 +2,12 @@
 
 import { useNavigationStore } from '@/stores/navigation'
 import { useAuthStore } from '@/stores/auth'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { BarChart3, Package, ShoppingCart, Tag, Users, ArrowLeft, LogOut, Shield, FolderTree, MessageSquare } from 'lucide-react'
+import { BarChart3, Package, ShoppingCart, Tag, Users, ArrowLeft, LogOut, Shield, FolderTree, MessageSquare, Store } from 'lucide-react'
 
-type AdminView = 'admin' | 'admin-analytics' | 'admin-products' | 'admin-categories' | 'admin-reviews' | 'admin-orders' | 'admin-coupons' | 'admin-users'
+type AdminView = 'admin' | 'admin-analytics' | 'admin-products' | 'admin-categories' | 'admin-reviews' | 'admin-orders' | 'admin-coupons' | 'admin-users' | 'admin-seller-approvals'
 
 const navItems: { icon: typeof BarChart3; label: string; view: AdminView; badge?: string }[] = [
   { icon: BarChart3, label: 'Dashboard', view: 'admin' },
@@ -16,6 +17,7 @@ const navItems: { icon: typeof BarChart3; label: string; view: AdminView; badge?
   { icon: ShoppingCart, label: 'Orders', view: 'admin-orders' },
   { icon: Tag, label: 'Coupons', view: 'admin-coupons' },
   { icon: Users, label: 'Users', view: 'admin-users' },
+  { icon: Store, label: 'Seller Approvals', view: 'admin-seller-approvals' },
 ]
 
 interface Props { children: React.ReactNode }
@@ -23,6 +25,19 @@ interface Props { children: React.ReactNode }
 export default function AdminLayout({ children }: Props) {
   const { currentView, navigate } = useNavigationStore()
   const { user, setUser, isAdmin } = useAuthStore()
+  const [sellerPendingCount, setSellerPendingCount] = useState(0)
+
+  // Fetch pending seller count for badge
+  useEffect(() => {
+    fetch('/api/admin/seller-approvals')
+      .then(r => r.json())
+      .then((data: Array<{ isApproved: boolean }>) => {
+        if (Array.isArray(data)) {
+          setSellerPendingCount(data.filter(p => !p.isApproved).length)
+        }
+      })
+      .catch(() => {})
+  }, [currentView])
 
   if (!user || !isAdmin()) {
     return (
@@ -77,6 +92,7 @@ export default function AdminLayout({ children }: Props) {
             <nav className="bg-card border rounded-xl p-2 space-y-1 sticky top-24">
               {navItems.map(item => {
                 const active = currentView === item.view
+                const showSellerBadge = item.view === 'admin-seller-approvals' && sellerPendingCount > 0
                 return (
                   <button
                     key={item.view}
@@ -89,7 +105,11 @@ export default function AdminLayout({ children }: Props) {
                   >
                     <item.icon className="h-4 w-4" />
                     <span className="flex-1 text-left">{item.label}</span>
-                    {item.badge && (
+                    {showSellerBadge ? (
+                      <span className="text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-500 text-white">
+                        {sellerPendingCount}
+                      </span>
+                    ) : item.badge && (
                       <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
                         active
                           ? 'bg-background/20 text-background'

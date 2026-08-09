@@ -274,6 +274,39 @@ async function main() {
   })
   console.log('✅ Created demo user (demo@store.com)')
 
+  // Create demo seller user with approved profile
+  const sellerUser = await db.user.upsert({
+    where: { email: 'seller@store.com' },
+    update: {},
+    create: {
+      email: 'seller@store.com',
+      name: 'John Seller',
+      role: 'seller',
+      password: 'seller123',
+    },
+  })
+
+  const sellerProfile = await db.sellerProfile.upsert({
+    where: { userId: sellerUser.id },
+    update: {},
+    create: {
+      userId: sellerUser.id,
+      storeName: 'TechGear Pro',
+      storeSlug: 'techgear-pro',
+      description: 'Premium tech accessories and gadgets for the modern lifestyle.',
+      isApproved: true,
+      commission: 10,
+    },
+  })
+  console.log('✅ Created seller user (seller@store.com)')
+
+  // Assign some existing products to the seller
+  const sellerProductSlugs = ['wireless-nc-headphones', 'wireless-charging-pad', 'mechanical-gaming-keyboard', 'usb-c-hub-7in1', 'portable-bluetooth-speaker']
+  for (const slug of sellerProductSlugs) {
+    await db.product.update({ where: { slug }, data: { sellerId: sellerProfile.id } }).catch(() => {})
+  }
+  console.log(`✅ Assigned ${sellerProductSlugs.length} products to seller`)
+
   console.log('\n🎉 Seeding complete!')
 }
 

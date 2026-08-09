@@ -14,17 +14,18 @@ model User {
   password      String?
   image         String?
   phone         String?
-  role          String    @default("customer") // customer, admin
+  role          String    @default("customer") // customer, seller, admin
   isBanned      Boolean   @default(false)
   emailVerified DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  addresses   Address[]
-  orders      Order[]
-  reviews     Review[]
-  wishlist    Wishlist[]
-  cart        Cart[]
+  addresses      Address[]
+  orders         Order[]
+  reviews        Review[]
+  wishlist       Wishlist[]
+  cart           Cart[]
+  sellerProfile  SellerProfile?
 }
 
 model Address {
@@ -41,6 +42,28 @@ model Address {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model SellerProfile {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storeName     String
+  storeSlug     String   @unique
+  description   String?
+  logo          String?
+  banner        String?
+  isApproved    Boolean  @default(false)
+  commission    Float    @default(10) // platform commission %
+  bankInfo      String?  // JSON: {bankName, accountNumber, routingNumber}
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  products      Product[]
+
+  @@index([userId])
+  @@index([isApproved])
+  @@index([storeSlug])
 }
 
 model Category {
@@ -79,6 +102,8 @@ model Product {
   soldCount   Int      @default(0)
   categoryId  String?
   category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  sellerId    String?
+  seller      SellerProfile? @relation(fields: [sellerId], references: [id], onDelete: SetNull)
   images      String   @default("[]") // JSON array of image URLs
   variants    ProductVariant[]
   reviews     Review[]
@@ -94,6 +119,7 @@ model Product {
   @@index([brand])
   @@index([rating])
   @@index([price])
+  @@index([sellerId])
 }
 
 model ProductVariant {
@@ -164,8 +190,8 @@ model OrderItem {
   id            String   @id @default(cuid())
   orderId       String
   order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId     String
-  product       Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+  productId     String?
+  product       Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
   variantId     String?
   variant       ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
   productName   String
