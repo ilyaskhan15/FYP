@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from 'react'
 import Header from '@/components/storefront/Header'
 import Footer from '@/components/storefront/Footer'
 import CartDrawer from '@/components/storefront/CartDrawer'
+import CartSync from '@/components/storefront/CartSync'
 import HomePage from '@/components/storefront/HomePage'
 import ShopPage from '@/components/storefront/ShopPage'
 import ProductPage from '@/components/storefront/ProductPage'
@@ -106,6 +107,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <CartSync />
       <Header />
       <main className="flex-1">
         <div key={currentView} className="animate-fade-in-up">
